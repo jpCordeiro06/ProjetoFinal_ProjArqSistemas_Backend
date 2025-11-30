@@ -1,11 +1,13 @@
 package com.levelupstore.estoque.model;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "produtos")
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 public abstract class Produto {
 
     @Id
@@ -29,6 +31,9 @@ public abstract class Produto {
     @JoinColumn(name = "condicao_id", nullable = false)
     private Condicao condicao;
 
+    @OneToOne(mappedBy = "produto", cascade = CascadeType.ALL)
+    private Estoque estoque;
+
     public Produto() {
     }
 
@@ -40,12 +45,30 @@ public abstract class Produto {
         this.quantidadeEstoque += quantidade;
     }
 
-    public Long getId() { return id; }
-    public String getNome() { return nome; }
-    public BigDecimal getPreco() { return preco; }
-    public Integer getQuantidadeEstoque() { return quantidadeEstoque; }
-    public Categoria getCategoria() { return categoria; }
-    public Condicao getCondicao() { return condicao; }
+    public Long getId() {
+        return id;
+    }
+    public String getNome() {
+
+        return nome;
+    }
+    public BigDecimal getPreco() {
+        return preco;
+    }
+
+    public Estoque getEstoque() { return estoque; }
+    public void setEstoque(Estoque estoque) {
+        this.estoque = estoque;
+        if (estoque != null) estoque.setProduto(this);
+    }
+
+    public Categoria getCategoria() {
+
+        return categoria;
+    }
+    public Condicao getCondicao() {
+        return condicao;
+    }
 
     public void setNome(String nome) {
         if (nome == null || nome.trim().isEmpty()) {
@@ -59,13 +82,6 @@ public abstract class Produto {
             throw new IllegalArgumentException("O preço deve ser positivo.");
         }
         this.preco = preco;
-    }
-
-    public void setQuantidadeEstoque(Integer quantidadeEstoque) {
-        if (quantidadeEstoque == null || quantidadeEstoque < 0) {
-            throw new IllegalArgumentException("A quantidade em estoque não pode ser negativa.");
-        }
-        this.quantidadeEstoque = quantidadeEstoque;
     }
 
     public void setCategoria(Categoria categoria) {

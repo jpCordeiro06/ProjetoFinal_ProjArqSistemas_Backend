@@ -17,15 +17,18 @@ public class Condicao {
     }
 
     public Condicao(String nome) {
+
         this.nome = nome;
     }
 
     // Getters
     public Long getId() {
+
         return id;
     }
 
     public String getNome() {
+
         return nome;
     }
 

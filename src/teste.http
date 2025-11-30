@@ -1,0 +1,22 @@
+### TESTE FINAL: Realizar Venda Completa (Com Polimorfismo)
+POST http://localhost:8080/v1/vendas
+Content-Type: application/json
+
+{
+  "vendedor": { "id": 2 },
+  "cliente": { "id": 1 },
+  "statusVenda": { "id": 2 },
+  "cupomDesconto": { "codigo": "BEMVINDO10" },
+  "tipoPagamento": {
+    "@class": "com.levelupstore.pagamentos.Dinheiro"
+  },
+  "itens": [
+    {
+      "produto": {
+        "@class": "com.levelupstore.estoque.model.Jogo",
+        "id": 1
+      },
+      "quantidade": 2
+    }
+  ]
+}

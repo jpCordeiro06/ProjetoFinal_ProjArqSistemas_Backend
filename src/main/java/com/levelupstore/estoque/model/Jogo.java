@@ -17,6 +17,7 @@ public class Jogo extends Produto {
     }
 
     public String getPlataforma() {
+
         return plataforma;
     }
 

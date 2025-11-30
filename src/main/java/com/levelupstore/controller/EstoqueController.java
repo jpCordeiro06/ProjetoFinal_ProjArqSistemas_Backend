@@ -1,4 +1,4 @@
-package com.levelupstore.api;
+package com.levelupstore.controller;
 
 import com.levelupstore.estoque.model.Produto;
 import com.levelupstore.estoque.service.EstoqueService;
