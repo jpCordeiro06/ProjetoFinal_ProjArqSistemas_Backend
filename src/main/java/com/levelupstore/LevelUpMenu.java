@@ -1,4 +1,4 @@
-package com.levelupstore;
+package com.levelupstore.cli;
 
 import com.levelupstore.estoque.model.*;
 import com.levelupstore.estoque.repository.ProdutoRepository;
@@ -78,11 +78,12 @@ public class LevelUpMenu implements CommandLineRunner {
         while (opcaoAdmin != 9) {
             System.out.println("\n--- PAINEL ADMINISTRADOR ---");
             System.out.println("1 - Realizar Nova Venda");
-            System.out.println("2 - Consultar Faturamento Total");
-            System.out.println("3 - Relatório Financeiro de Estoque");
-            System.out.println("4 - Listar Produtos");
-            System.out.println("5 - Cadastrar Novo Produto");
-            System.out.println("6 - Cadastrar Novo Cliente");
+            System.out.println("2 - Realizar Troca (Trade-In)");
+            System.out.println("3 - Consultar Faturamento Total");
+            System.out.println("4 - Relatório Financeiro de Estoque");
+            System.out.println("5 - Listar Produtos");
+            System.out.println("6 - Cadastrar Novo Produto");
+            System.out.println("7 - Cadastrar Novo Cliente");
             System.out.println("9 - Logout");
             System.out.print("Opção: ");
 
@@ -91,11 +92,12 @@ public class LevelUpMenu implements CommandLineRunner {
 
             switch (opcaoAdmin) {
                 case 1 -> realizarVendaReal(scanner, idUsuarioLogado);
-                case 2 -> exibirFaturamentoVendas();
-                case 3 -> exibirRelatorioFinanceiro();
-                case 4 -> listarProdutosReais();
-                case 5 -> cadastrarProdutoRapido(scanner);
-                case 6 -> cadastrarCliente(scanner);
+                case 2 -> realizarTroca(scanner);
+                case 3 -> exibirFaturamentoVendas();
+                case 4 -> exibirRelatorioFinanceiro();
+                case 5 -> listarProdutosReais();
+                case 6 -> cadastrarProdutoRapido(scanner);
+                case 7 -> cadastrarCliente(scanner);
                 case 9 -> System.out.println("Saindo do Admin...");
                 default -> System.out.println("Opção inválida.");
             }
@@ -112,7 +114,7 @@ public class LevelUpMenu implements CommandLineRunner {
             System.out.println("1 - Realizar Nova Venda");
             System.out.println("2 - Realizar Troca (Trade-In)");
             System.out.println("3 - Consultar Preços");
-            System.out.println("4 - Cadastrar Novo Cliente"); // Vendedor também precisa cadastrar cliente
+            System.out.println("4 - Cadastrar Novo Cliente");
             System.out.println("9 - Logout");
             System.out.print("Opção: ");
 
@@ -123,7 +125,7 @@ public class LevelUpMenu implements CommandLineRunner {
                 case 1 -> realizarVendaReal(scanner, idUsuarioLogado);
                 case 2 -> realizarTroca(scanner);
                 case 3 -> listarProdutosReais();
-                case 4 -> cadastrarCliente(scanner); // Novo
+                case 4 -> cadastrarCliente(scanner);
                 case 9 -> System.out.println("Saindo do Vendedor...");
                 default -> System.out.println("Opção inválida.");
             }
@@ -136,9 +138,8 @@ public class LevelUpMenu implements CommandLineRunner {
             System.out.println("\n--- NOVA VENDA ---");
 
             Usuario vendedor = usuarioRepository.findById(idVendedor).orElseThrow();
-            System.out.println("Atendente: " + vendedor.getNome());
 
-            // MELHORIA: Listar clientes antes de pedir o ID
+            // Listar clientes para facilitar a escolha
             listarClientes();
             System.out.print("Digite o ID do Cliente: ");
             Long idCliente = scanner.nextLong();
@@ -154,7 +155,7 @@ public class LevelUpMenu implements CommandLineRunner {
             venda.setStatusVenda(statusVendaRepository.findById(2L).orElse(null));
 
             // Carrinho
-            listarProdutosReais(); // Mostra produtos para facilitar a escolha
+            listarProdutosReais(); // Mostra produtos
             while (true) {
                 System.out.print("\nID do Produto (0 para fechar carrinho): ");
                 Long idProd = scanner.nextLong();
@@ -188,9 +189,11 @@ public class LevelUpMenu implements CommandLineRunner {
                 venda.setCupomDesconto(cp);
             }
 
+            // Checkout e Pagamento
             venda.calcularTotal();
             System.out.println("Total Bruto: R$ " + venda.getValorTotal());
 
+            // AQUI ESTÁ A CORREÇÃO: Chama o método que pergunta as parcelas
             TipoPagamento pagamento = selecionarFormaPagamento(scanner);
             venda.setTipoPagamento(pagamento);
 
@@ -199,7 +202,18 @@ public class LevelUpMenu implements CommandLineRunner {
             System.out.println("=================================");
             System.out.println("✅ VENDA CONCLUÍDA! ID: " + concluida.getId());
             System.out.println("👤 Cliente: " + concluida.getCliente().getNome());
+
+            if (concluida.getCupomDesconto() != null) {
+                System.out.println("🏷️ Cupom Aplicado: " + concluida.getCupomDesconto().getCodigo());
+            }
+
             System.out.println("💰 Valor Final: R$ " + concluida.getValorTotal());
+            System.out.println("💳 Forma Pagamento: " + concluida.getTipoPagamento().getDescricao());
+
+            // Se for crédito, mostra parcelas (dá um cast seguro só pra exibir)
+            if (concluida.getTipoPagamento() instanceof CartaoCredito cc) {
+                System.out.println("📅 Parcelas: " + cc.getNumeroParcelas() + "x");
+            }
             System.out.println("=================================");
 
         } catch (Exception e) {
@@ -207,7 +221,45 @@ public class LevelUpMenu implements CommandLineRunner {
         }
     }
 
-    // --- MÉTODOS AUXILIARES ---
+    // --- SELEÇÃO DE PAGAMENTO COM INTERAÇÃO ---
+    private TipoPagamento selecionarFormaPagamento(Scanner scanner) {
+        System.out.println("\n--- FORMA DE PAGAMENTO ---");
+        System.out.println("1 - Dinheiro");
+        System.out.println("2 - PIX");
+        System.out.println("3 - Cartão de Crédito");
+        System.out.println("4 - Cartão de Débito");
+        System.out.print("Opção: ");
+        int op = scanner.nextInt();
+
+        return switch (op) {
+            case 2 -> {
+                Pix p = new Pix();
+                p.setTxid("pix-" + System.currentTimeMillis());
+                yield p;
+            }
+            case 3 -> {
+                CartaoCredito c = new CartaoCredito();
+                c.setBandeira("Visa"); // Simulação
+                c.setNumeroTransacao("NSU-123");
+
+                System.out.print("Número de Parcelas: ");
+                int parc = scanner.nextInt();
+                c.setNumeroParcelas(parc);
+
+                yield c;
+            }
+            case 4 -> {
+                CartaoDebito d = new CartaoDebito();
+                d.setBandeira("Mastercard");
+                d.setNumeroTransacao("NSU-987");
+                d.setTipoConta("Corrente");
+                yield d;
+            }
+            default -> new Dinheiro();
+        };
+    }
+
+    // --- OUTROS MÉTODOS AUXILIARES ---
 
     private void listarClientes() {
         System.out.println("\n--- LISTA DE CLIENTES ---");
@@ -245,7 +297,16 @@ public class LevelUpMenu implements CommandLineRunner {
     private void realizarTroca(Scanner scanner) {
         System.out.println("\n--- MÓDULO DE TROCAS ---");
         try {
-            scanner.nextLine(); // Limpar buffer
+            // Pergunta o cliente para vincular o crédito
+            listarClientes();
+            System.out.print("ID do Cliente que trouxe o item: ");
+            Long idCliente = scanner.nextLong();
+            Cliente cliente = clienteRepository.findById(idCliente)
+                    .orElseThrow(() -> new RuntimeException("Cliente não encontrado!"));
+
+            scanner.nextLine();
+            System.out.println("Cliente: " + cliente.getNome());
+
             System.out.print("Nome do Jogo/Console recebido: ");
             String nome = scanner.nextLine();
 
@@ -276,25 +337,15 @@ public class LevelUpMenu implements CommandLineRunner {
             credito.setPercentual(new BigDecimal(valorAvaliacao));
             credito.setValidade(LocalDate.now().plusYears(1));
             credito.setAtivo(true);
+            credito.setCliente(cliente); // Vínculo com cliente
 
             cupomDescontoRepository.save(credito);
             System.out.println("CRÉDITO GERADO: " + codigoCupom + " (Valor: R$ " + valorAvaliacao + ")");
+            System.out.println("Válido apenas para o cliente: " + cliente.getNome());
 
         } catch (Exception e) {
             System.out.println("Erro na troca: " + e.getMessage());
         }
-    }
-
-    private TipoPagamento selecionarFormaPagamento(Scanner scanner) {
-        System.out.println("Pagamento: 1-Dinheiro | 2-PIX | 3-Crédito | 4-Débito");
-        System.out.print("Opção: ");
-        int op = scanner.nextInt();
-        return switch (op) {
-            case 2 -> { Pix p = new Pix(); p.setTxid("pix-" + System.currentTimeMillis()); yield p; }
-            case 3 -> { CartaoCredito c = new CartaoCredito(); c.setBandeira("Visa"); c.setNumeroTransacao("123"); c.setNumeroParcelas(1); yield c; }
-            case 4 -> { CartaoDebito d = new CartaoDebito(); d.setBandeira("Mastercard"); d.setNumeroTransacao("123"); d.setTipoConta("Corrente"); yield d; }
-            default -> new Dinheiro();
-        };
     }
 
     private void listarProdutosReais() {

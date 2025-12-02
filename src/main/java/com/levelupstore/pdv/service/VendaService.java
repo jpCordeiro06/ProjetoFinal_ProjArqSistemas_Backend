@@ -62,7 +62,7 @@ public class VendaService {
             venda.setStatusVenda(status);
         }
 
-        // 3. Validar e Processar Cupom (Lógica Nova!)
+        // 3. Validar e Processar Cupom
         if (venda.getCupomDesconto() != null && venda.getCupomDesconto().getCodigo() != null) {
             CupomDesconto cupom = cupomDescontoRepository.findByCodigo(venda.getCupomDesconto().getCodigo())
                     .orElseThrow(() -> new BusinessRuleException("Cupom inválido: " + venda.getCupomDesconto().getCodigo()));
@@ -70,7 +70,15 @@ public class VendaService {
             if (cupom.getValidade() != null && cupom.getValidade().isBefore(LocalDate.now())) {
                 throw new BusinessRuleException("Cupom vencido.");
             }
-            venda.setCupomDesconto(cupom); // Garante o objeto completo do banco
+
+            if (cupom.getCliente() != null) {
+                // Se o cupom tem dono, verifica se é o mesmo da venda
+                if (!cupom.getCliente().getId().equals(venda.getCliente().getId())) {
+                    throw new BusinessRuleException("Este cupom pertence a outro cliente!");
+                }
+            }
+
+            venda.setCupomDesconto(cupom);
         }
 
         // 4. Processar Itens e Estoque
@@ -99,10 +107,24 @@ public class VendaService {
         // 5. Calcular Total com Desconto
         BigDecimal valorFinal = totalBruto;
         if (venda.getCupomDesconto() != null) {
-            // Exemplo: Desconto percentual
-            BigDecimal desconto = totalBruto.multiply(venda.getCupomDesconto().getPercentual())
-                    .divide(new BigDecimal(100));
-            valorFinal = totalBruto.subtract(desconto);
+            CupomDesconto cupom = venda.getCupomDesconto();
+            BigDecimal valorDesconto;
+
+            // Se o código começa com TROCA, o campo 'percentual' é na verdade VALOR FIXO
+            if (cupom.getCodigo().startsWith("TROCA-")) {
+                valorDesconto = cupom.getPercentual(); // Aqui é valor monetário
+            } else {
+                // Caso contrário, é porcentagem (ex: 10 para 10%)
+                valorDesconto = totalBruto.multiply(cupom.getPercentual())
+                        .divide(new BigDecimal(100));
+            }
+
+            valorFinal = totalBruto.subtract(valorDesconto);
+
+            // Garante que não fique negativo (a loja não paga para o cliente levar)
+            if (valorFinal.compareTo(BigDecimal.ZERO) < 0) {
+                valorFinal = BigDecimal.ZERO;
+            }
         }
 
         venda.setValorTotal(valorFinal);
