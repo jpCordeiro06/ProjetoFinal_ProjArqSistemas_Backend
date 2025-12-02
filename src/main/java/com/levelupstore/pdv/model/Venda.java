@@ -25,12 +25,11 @@ public class Venda {
 
     private BigDecimal valorTotal = BigDecimal.ZERO;
 
-
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "status_id")
     private StatusVenda statusVenda;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "cupom_id")
     private CupomDesconto cupomDesconto;
 

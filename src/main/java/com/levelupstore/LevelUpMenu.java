@@ -1,4 +1,4 @@
-package com.levelupstore.cli;
+package com.levelupstore;
 
 import com.levelupstore.estoque.model.*;
 import com.levelupstore.estoque.repository.ProdutoRepository;
@@ -6,7 +6,6 @@ import com.levelupstore.estoque.service.EstoqueService;
 import com.levelupstore.pagamentos.*;
 import com.levelupstore.pdv.model.CupomDesconto;
 import com.levelupstore.pdv.model.ItemVenda;
-import com.levelupstore.pdv.model.StatusVenda;
 import com.levelupstore.pdv.model.Venda;
 import com.levelupstore.pdv.repository.CupomDescontoRepository;
 import com.levelupstore.pdv.repository.StatusVendaRepository;
@@ -193,7 +192,6 @@ public class LevelUpMenu implements CommandLineRunner {
             venda.calcularTotal();
             System.out.println("Total Bruto: R$ " + venda.getValorTotal());
 
-            // AQUI ESTÁ A CORREÇÃO: Chama o método que pergunta as parcelas
             TipoPagamento pagamento = selecionarFormaPagamento(scanner);
             venda.setTipoPagamento(pagamento);
 
