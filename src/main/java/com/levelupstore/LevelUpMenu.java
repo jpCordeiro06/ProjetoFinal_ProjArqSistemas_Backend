@@ -123,9 +123,20 @@ public class LevelUpMenu implements CommandLineRunner {
         try {
             System.out.println("\n--- NOVA VENDA ---");
 
+            // 1. Identificar o Vendedor (Automático pelo login)
             Usuario vendedor = usuarioRepository.findById(idVendedor).orElseThrow();
-            Cliente cliente = clienteRepository.findById(1L).orElseThrow();
+            System.out.println("Vendedor: " + vendedor.getNome());
 
+            // 2. Identificar o Cliente
+            System.out.print("Digite o ID do Cliente: ");
+            Long idCliente = scanner.nextLong();
+
+            Cliente cliente = clienteRepository.findById(idCliente)
+                    .orElseThrow(() -> new RuntimeException("Cliente não encontrado!"));
+
+            System.out.println("Cliente Selecionado: " + cliente.getNome());
+
+            // Criar a Venda
             Venda venda = new Venda();
             venda.setVendedor(vendedor);
             venda.setCliente(cliente);
@@ -133,7 +144,7 @@ public class LevelUpMenu implements CommandLineRunner {
             StatusVenda status = statusVendaRepository.findById(2L).orElse(null);
             venda.setStatusVenda(status);
 
-            // PASSO 1: CARRINHO
+            // PASSO 3: CARRINHO
             while (true) {
                 System.out.print("ID do Produto (0 para finalizar): ");
                 Long idProd = scanner.nextLong();
@@ -156,37 +167,21 @@ public class LevelUpMenu implements CommandLineRunner {
                 return;
             }
 
-            // PASSO 2: CUPOM DE DESCONTO (NOVO!)
-            System.out.print("Possui cupom de desconto? (S/N): ");
-            String temCupom = scanner.next();
-
-            if (temCupom.equalsIgnoreCase("S")) {
-                System.out.print("Digite o código do cupom: ");
-                String codigo = scanner.next();
-
-                // Cria um objeto cupom apenas com o código para o Service validar depois
-                CupomDesconto cupom = new CupomDesconto();
-                cupom.setCodigo(codigo);
-                venda.setCupomDesconto(cupom);
-            }
-
-            // PASSO 3: CHECKOUT
+            // PASSO 4: CHECKOUT
             venda.calcularTotal();
-            // O total exibido aqui é o BRUTO. O líquido (com desconto) será calculado no Service.
-            System.out.println("Total Bruto: R$ " + venda.getValorTotal());
+            System.out.println("Total: R$ " + venda.getValorTotal());
 
             TipoPagamento pagamento = selecionarFormaPagamento(scanner);
             venda.setTipoPagamento(pagamento);
 
-            // Processar
+            // Processar no Service
             Venda concluida = vendaService.realizarVenda(venda);
 
             System.out.println("--------------------------------");
-            System.out.println("✅ VENDA CONCLUÍDA! ID: " + concluida.getId());
-            if (concluida.getCupomDesconto() != null) {
-                System.out.println("🏷️ Cupom Aplicado: " + concluida.getCupomDesconto().getCodigo());
-            }
-            System.out.println("💰 Valor Final a Pagar: R$ " + concluida.getValorTotal());
+            System.out.println("✅ VENDA CONCLUÍDA!");
+            System.out.println("📄 ID da Venda: " + concluida.getId());
+            System.out.println("👤 Cliente: " + concluida.getCliente().getNome()); // Mostra o nome no final
+            System.out.println("💰 Valor Final: R$ " + concluida.getValorTotal());
             System.out.println("--------------------------------");
 
         } catch (Exception e) {

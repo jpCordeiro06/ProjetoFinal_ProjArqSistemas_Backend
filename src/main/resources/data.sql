@@ -38,6 +38,9 @@ VALUES (2, 'João da Silva', 'joao', '123456', 2);
 INSERT INTO clientes (id, nome, cpf, email)
 VALUES (1, 'Maria Compradora', '111.222.333-44', 'maria@gmail.com');
 
+INSERT INTO clientes (id, nome, cpf, email)
+VALUES (2, 'Ronnison Reges', '111.222.333-44', 'ronnison@gmail.com');
+
 -- ============================================================
 -- 3. PRODUTOS E ESTOQUE (AQUI MUDOU TUDO!)
 -- ============================================================
