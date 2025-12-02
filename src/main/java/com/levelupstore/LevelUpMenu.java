@@ -8,6 +8,7 @@ import com.levelupstore.pdv.model.CupomDesconto;
 import com.levelupstore.pdv.model.ItemVenda;
 import com.levelupstore.pdv.model.StatusVenda;
 import com.levelupstore.pdv.model.Venda;
+import com.levelupstore.pdv.repository.CupomDescontoRepository;
 import com.levelupstore.pdv.repository.StatusVendaRepository;
 import com.levelupstore.pdv.service.VendaService;
 import com.levelupstore.relatorios.dto.RelatorioEstoqueDTO;
@@ -21,7 +22,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Scanner;
+import java.util.UUID;
 
 @Component
 public class LevelUpMenu implements CommandLineRunner {
@@ -33,13 +36,16 @@ public class LevelUpMenu implements CommandLineRunner {
     @Autowired private ClienteRepository clienteRepository;
     @Autowired private StatusVendaRepository statusVendaRepository;
     @Autowired private RelatorioService relatorioService;
+    @Autowired private CupomDescontoRepository cupomDescontoRepository;
 
     @Override
     public void run(String... args) throws Exception {
         Scanner scanner = new Scanner(System.in);
         int opcaoPrincipal = 0;
 
-        System.out.println("BEM-VINDO À LEVEL UP STORE");
+        System.out.println("=========================================");
+        System.out.println("      SISTEMA LEVEL UP STORE v1.0        ");
+        System.out.println("=========================================");
 
         while (opcaoPrincipal != 9) {
             System.out.println("\n--- TELA DE LOGIN ---");
@@ -67,7 +73,7 @@ public class LevelUpMenu implements CommandLineRunner {
     // MENU ADMINISTRADOR
     private void menuAdministrador(Scanner scanner) {
         int opcaoAdmin = 0;
-        Long idUsuarioLogado = 1L; // Simula Admin ID 1
+        Long idUsuarioLogado = 1L; // Simula Admin
 
         while (opcaoAdmin != 9) {
             System.out.println("\n--- PAINEL ADMINISTRADOR ---");
@@ -76,6 +82,7 @@ public class LevelUpMenu implements CommandLineRunner {
             System.out.println("3 - Relatório Financeiro de Estoque");
             System.out.println("4 - Listar Produtos");
             System.out.println("5 - Cadastrar Novo Produto");
+            System.out.println("6 - Cadastrar Novo Cliente");
             System.out.println("9 - Logout");
             System.out.print("Opção: ");
 
@@ -88,6 +95,7 @@ public class LevelUpMenu implements CommandLineRunner {
                 case 3 -> exibirRelatorioFinanceiro();
                 case 4 -> listarProdutosReais();
                 case 5 -> cadastrarProdutoRapido(scanner);
+                case 6 -> cadastrarCliente(scanner);
                 case 9 -> System.out.println("Saindo do Admin...");
                 default -> System.out.println("Opção inválida.");
             }
@@ -97,12 +105,14 @@ public class LevelUpMenu implements CommandLineRunner {
     // MENU VENDEDOR
     private void menuVendedor(Scanner scanner) {
         int opcaoVendedor = 0;
-        Long idUsuarioLogado = 2L; // Simula Vendedor ID 2
+        Long idUsuarioLogado = 2L; // Simula Vendedor
 
         while (opcaoVendedor != 9) {
             System.out.println("\n--- PAINEL VENDEDOR ---");
             System.out.println("1 - Realizar Nova Venda");
-            System.out.println("2 - Consultar Preços");
+            System.out.println("2 - Realizar Troca (Trade-In)");
+            System.out.println("3 - Consultar Preços");
+            System.out.println("4 - Cadastrar Novo Cliente"); // Vendedor também precisa cadastrar cliente
             System.out.println("9 - Logout");
             System.out.print("Opção: ");
 
@@ -111,42 +121,42 @@ public class LevelUpMenu implements CommandLineRunner {
 
             switch (opcaoVendedor) {
                 case 1 -> realizarVendaReal(scanner, idUsuarioLogado);
-                case 2 -> listarProdutosReais();
+                case 2 -> realizarTroca(scanner);
+                case 3 -> listarProdutosReais();
+                case 4 -> cadastrarCliente(scanner); // Novo
                 case 9 -> System.out.println("Saindo do Vendedor...");
                 default -> System.out.println("Opção inválida.");
             }
         }
     }
 
-    // LÓGICA DE VENDAS
+    // --- LÓGICA DE VENDAS ---
     private void realizarVendaReal(Scanner scanner, Long idVendedor) {
         try {
             System.out.println("\n--- NOVA VENDA ---");
 
-            // 1. Identificar o Vendedor (Automático pelo login)
             Usuario vendedor = usuarioRepository.findById(idVendedor).orElseThrow();
-            System.out.println("Vendedor: " + vendedor.getNome());
+            System.out.println("Atendente: " + vendedor.getNome());
 
-            // 2. Identificar o Cliente
+            // MELHORIA: Listar clientes antes de pedir o ID
+            listarClientes();
             System.out.print("Digite o ID do Cliente: ");
             Long idCliente = scanner.nextLong();
 
             Cliente cliente = clienteRepository.findById(idCliente)
                     .orElseThrow(() -> new RuntimeException("Cliente não encontrado!"));
 
-            System.out.println("Cliente Selecionado: " + cliente.getNome());
+            System.out.println(">> Cliente Selecionado: " + cliente.getNome());
 
-            // Criar a Venda
             Venda venda = new Venda();
             venda.setVendedor(vendedor);
             venda.setCliente(cliente);
+            venda.setStatusVenda(statusVendaRepository.findById(2L).orElse(null));
 
-            StatusVenda status = statusVendaRepository.findById(2L).orElse(null);
-            venda.setStatusVenda(status);
-
-            // PASSO 3: CARRINHO
+            // Carrinho
+            listarProdutosReais(); // Mostra produtos para facilitar a escolha
             while (true) {
-                System.out.print("ID do Produto (0 para finalizar): ");
+                System.out.print("\nID do Produto (0 para fechar carrinho): ");
                 Long idProd = scanner.nextLong();
                 if (idProd == 0) break;
 
@@ -156,116 +166,167 @@ public class LevelUpMenu implements CommandLineRunner {
                 Produto prod = produtoRepository.findById(idProd).orElse(null);
                 if (prod != null) {
                     venda.adicionarItem(new ItemVenda(prod, qtd));
-                    System.out.println("Item adicionado.");
+                    System.out.println("Adicionado: " + prod.getNome());
                 } else {
                     System.out.println("Produto não encontrado.");
                 }
             }
 
             if (venda.getItens().isEmpty()) {
-                System.out.println("Venda cancelada (vazia).");
+                System.out.println("Venda cancelada (carrinho vazio).");
                 return;
             }
 
-            // PASSO 4: CHECKOUT
+            // Cupom
+            System.out.print("Possui cupom? (S/N): ");
+            String temCupom = scanner.next();
+            if (temCupom.equalsIgnoreCase("S")) {
+                System.out.print("Código: ");
+                String cod = scanner.next();
+                CupomDesconto cp = new CupomDesconto();
+                cp.setCodigo(cod);
+                venda.setCupomDesconto(cp);
+            }
+
             venda.calcularTotal();
-            System.out.println("Total: R$ " + venda.getValorTotal());
+            System.out.println("Total Bruto: R$ " + venda.getValorTotal());
 
             TipoPagamento pagamento = selecionarFormaPagamento(scanner);
             venda.setTipoPagamento(pagamento);
 
-            // Processar no Service
             Venda concluida = vendaService.realizarVenda(venda);
 
-            System.out.println("--------------------------------");
-            System.out.println("✅ VENDA CONCLUÍDA!");
-            System.out.println("📄 ID da Venda: " + concluida.getId());
-            System.out.println("👤 Cliente: " + concluida.getCliente().getNome()); // Mostra o nome no final
+            System.out.println("=================================");
+            System.out.println("✅ VENDA CONCLUÍDA! ID: " + concluida.getId());
+            System.out.println("👤 Cliente: " + concluida.getCliente().getNome());
             System.out.println("💰 Valor Final: R$ " + concluida.getValorTotal());
-            System.out.println("--------------------------------");
+            System.out.println("=================================");
 
         } catch (Exception e) {
             System.out.println("❌ Erro na venda: " + e.getMessage());
         }
     }
 
-    // SELEÇÃO DE PAGAMENTO
-    private TipoPagamento selecionarFormaPagamento(Scanner scanner) {
-        System.out.println("Forma de Pagamento:");
-        System.out.println("1-Dinheiro | 2-PIX | 3-Crédito | 4-Débito");
-        System.out.print("Opção: ");
-        int op = scanner.nextInt();
+    // --- MÉTODOS AUXILIARES ---
 
-        switch (op) {
-            case 1: return new Dinheiro();
-            case 2:
-                Pix pix = new Pix();
-                pix.setTxid("pix-console-123");
-                return pix;
-            case 3:
-                CartaoCredito cc = new CartaoCredito();
-                cc.setBandeira("Visa");
-                cc.setNumeroTransacao("NSU-123");
-                System.out.print("Parcelas: ");
-                cc.setNumeroParcelas(scanner.nextInt());
-                return cc;
-            case 4:
-                CartaoDebito cd = new CartaoDebito();
-                cd.setBandeira("Mastercard");
-                cd.setNumeroTransacao("NSU-987");
-                cd.setTipoConta("Corrente");
-                return cd;
-            default: return new Dinheiro();
+    private void listarClientes() {
+        System.out.println("\n--- LISTA DE CLIENTES ---");
+        var clientes = clienteRepository.findAll();
+        System.out.printf("%-5s | %-30s | %-15s%n", "ID", "NOME", "CPF");
+        for (Cliente c : clientes) {
+            System.out.printf("%-5d | %-30s | %-15s%n", c.getId(), c.getNome(), c.getCpf());
         }
+        System.out.println("---------------------------");
     }
 
-    // RELATÓRIOS
-    private void exibirRelatorioFinanceiro() {
-        System.out.println("\n--- RELATÓRIO DE ESTOQUE ---");
-        RelatorioEstoqueDTO dados = relatorioService.gerarRelatorioEstoque();
-        System.out.println("Total Itens: " + dados.getTotalItens());
-        System.out.println("Item Mais Caro: " + dados.getProdutoMaisCaro());
-        System.out.println("VALOR TOTAL IMOBILIZADO: R$ " + dados.getValorTotalEstoque());
-    }
-
-    private void exibirFaturamentoVendas() {
-        System.out.println("\n--- FATURAMENTO TOTAL ---");
-        BigDecimal total = relatorioService.calcularTotalVendas();
-        System.out.println("Total Vendido: R$ " + total);
-    }
-
-    // LISTAR ESTOQUE
-    private void listarProdutosReais() {
-        System.out.println("\n--- ESTOQUE ATUAL ---");
-        var produtos = produtoRepository.findAll();
-        System.out.printf("%-5s | %-30s | %-10s | %-5s%n", "ID", "NOME", "PREÇO", "QTD");
-        for (Produto p : produtos) {
-            // Acessa quantidade através da entidade Estoque
-            int qtd = (p.getEstoque() != null) ? p.getEstoque().getQuantidade() : 0;
-            System.out.printf("%-5d | %-30s | R$ %-7.2f | %-5d%n",
-                    p.getId(), p.getNome(), p.getPreco(), qtd);
-        }
-    }
-
-    // CADASTRAR PRODUTO
-    private void cadastrarProdutoRapido(Scanner scanner) {
-        System.out.println("\n--- CADASTRO RÁPIDO ---");
+    private void cadastrarCliente(Scanner scanner) {
+        System.out.println("\n--- CADASTRO DE CLIENTE ---");
         try {
             scanner.nextLine();
             System.out.print("Nome: ");
             String nome = scanner.nextLine();
-            System.out.print("Preço: ");
+            System.out.print("CPF: ");
+            String cpf = scanner.nextLine();
+            System.out.print("Email: ");
+            String email = scanner.nextLine();
+
+            Cliente novo = new Cliente();
+            novo.setNome(nome);
+            novo.setCpf(cpf);
+            novo.setEmail(email);
+
+            clienteRepository.save(novo);
+            System.out.println("✅ Cliente cadastrado com sucesso!");
+        } catch (Exception e) {
+            System.out.println("Erro ao cadastrar cliente: " + e.getMessage());
+        }
+    }
+
+    private void realizarTroca(Scanner scanner) {
+        System.out.println("\n--- MÓDULO DE TROCAS ---");
+        try {
+            scanner.nextLine(); // Limpar buffer
+            System.out.print("Nome do Jogo/Console recebido: ");
+            String nome = scanner.nextLine();
+
+            System.out.print("Valor de Avaliação (Crédito): ");
+            double valorAvaliacao = scanner.nextDouble();
+
+            Jogo jogoUsado = new Jogo();
+            jogoUsado.setNome(nome);
+            jogoUsado.setPreco(new BigDecimal(valorAvaliacao * 1.5));
+
+            Categoria cat = new Categoria(); cat.setId(1L);
+            Condicao cond = new Condicao(); cond.setId(2L); // Usado
+
+            jogoUsado.setCategoria(cat);
+            jogoUsado.setCondicao(cond);
+            jogoUsado.setPlataforma("Trade-In");
+
+            Estoque est = new Estoque();
+            est.setQuantidade(1);
+            jogoUsado.setEstoque(est);
+
+            estoqueService.salvarProduto(jogoUsado);
+            System.out.println("Produto adicionado ao estoque.");
+
+            String codigoCupom = "TROCA-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+            CupomDesconto credito = new CupomDesconto();
+            credito.setCodigo(codigoCupom);
+            credito.setPercentual(new BigDecimal(valorAvaliacao));
+            credito.setValidade(LocalDate.now().plusYears(1));
+            credito.setAtivo(true);
+
+            cupomDescontoRepository.save(credito);
+            System.out.println("CRÉDITO GERADO: " + codigoCupom + " (Valor: R$ " + valorAvaliacao + ")");
+
+        } catch (Exception e) {
+            System.out.println("Erro na troca: " + e.getMessage());
+        }
+    }
+
+    private TipoPagamento selecionarFormaPagamento(Scanner scanner) {
+        System.out.println("Pagamento: 1-Dinheiro | 2-PIX | 3-Crédito | 4-Débito");
+        System.out.print("Opção: ");
+        int op = scanner.nextInt();
+        return switch (op) {
+            case 2 -> { Pix p = new Pix(); p.setTxid("pix-" + System.currentTimeMillis()); yield p; }
+            case 3 -> { CartaoCredito c = new CartaoCredito(); c.setBandeira("Visa"); c.setNumeroTransacao("123"); c.setNumeroParcelas(1); yield c; }
+            case 4 -> { CartaoDebito d = new CartaoDebito(); d.setBandeira("Mastercard"); d.setNumeroTransacao("123"); d.setTipoConta("Corrente"); yield d; }
+            default -> new Dinheiro();
+        };
+    }
+
+    private void listarProdutosReais() {
+        System.out.println("\n--- ESTOQUE ATUAL ---");
+        var produtos = produtoRepository.findAll();
+        System.out.printf("%-5s | %-30s | %-10s | %-10s | %-5s%n", "ID", "NOME", "CONDIÇÃO", "PREÇO", "QTD");
+        for (Produto p : produtos) {
+            int qtd = (p.getEstoque() != null) ? p.getEstoque().getQuantidade() : 0;
+            String cond = (p.getCondicao() != null) ? p.getCondicao().getNome() : "-";
+            System.out.printf("%-5d | %-30s | %-10s | R$ %-7.2f | %-5d%n", p.getId(), p.getNome(), cond, p.getPreco(), qtd);
+        }
+    }
+
+    private void cadastrarProdutoRapido(Scanner scanner) {
+        System.out.println("\n--- CADASTRO PRODUTO ---");
+        try {
+            scanner.nextLine();
+            System.out.print("Nome: ");
+            String nome = scanner.nextLine();
+            System.out.print("Preço Venda: ");
             double preco = scanner.nextDouble();
-            System.out.print("Qtd Inicial: ");
+            System.out.print("Qtd: ");
             int qtd = scanner.nextInt();
+
+            System.out.print("Condição (1-Novo, 2-Usado): ");
+            Long idCond = scanner.nextLong();
 
             Jogo novoJogo = new Jogo();
             novoJogo.setNome(nome);
             novoJogo.setPreco(new BigDecimal(preco));
-
-            // Define IDs fixos para categorias/condições (simplificação)
             Categoria cat = new Categoria(); cat.setId(1L);
-            Condicao cond = new Condicao(); cond.setId(1L);
+            Condicao cond = new Condicao(); cond.setId(idCond);
             novoJogo.setCategoria(cat);
             novoJogo.setCondicao(cond);
             novoJogo.setPlataforma("Multi");
@@ -275,9 +336,17 @@ public class LevelUpMenu implements CommandLineRunner {
             novoJogo.setEstoque(est);
 
             estoqueService.salvarProduto(novoJogo);
-            System.out.println("Produto cadastrado!");
+            System.out.println("✅ Produto cadastrado!");
         } catch (Exception e) {
             System.out.println("Erro: " + e.getMessage());
         }
+    }
+
+    private void exibirRelatorioFinanceiro() {
+        RelatorioEstoqueDTO d = relatorioService.gerarRelatorioEstoque();
+        System.out.println("Total Itens: " + d.getTotalItens() + " | Valor: R$ " + d.getValorTotalEstoque());
+    }
+    private void exibirFaturamentoVendas() {
+        System.out.println("Total Vendido: R$ " + relatorioService.calcularTotalVendas());
     }
 }

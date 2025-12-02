@@ -20,15 +20,12 @@ public abstract class Produto {
     @Column(nullable = false)
     private BigDecimal preco;
 
-    @Column(name = "qtd_estoque")
-    private Integer quantidadeEstoque;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoria_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "categoria_id")
     private Categoria categoria;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "condicao_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "condicao_id")
     private Condicao condicao;
 
     @OneToOne(mappedBy = "produto", cascade = CascadeType.ALL)
@@ -37,64 +34,22 @@ public abstract class Produto {
     public Produto() {
     }
 
-    // Método de Negócio: Atualiza o estoque
-    public void atualizarEstoque(int quantidade) {
-        if (this.quantidadeEstoque == null) {
-            this.quantidadeEstoque = 0;
-        }
-        this.quantidadeEstoque += quantidade;
-    }
+    // Getters e Setters
+    public Long getId() { return id; }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
+    public BigDecimal getPreco() { return preco; }
+    public void setPreco(BigDecimal preco) { this.preco = preco; }
 
-    public Long getId() {
-        return id;
-    }
-    public String getNome() {
+    public Categoria getCategoria() { return categoria; }
+    public void setCategoria(Categoria categoria) { this.categoria = categoria; }
 
-        return nome;
-    }
-    public BigDecimal getPreco() {
-        return preco;
-    }
+    public Condicao getCondicao() { return condicao; }
+    public void setCondicao(Condicao condicao) { this.condicao = condicao; }
 
     public Estoque getEstoque() { return estoque; }
     public void setEstoque(Estoque estoque) {
         this.estoque = estoque;
-        if (estoque != null) estoque.setProduto(this);
-    }
-
-    public Categoria getCategoria() {
-
-        return categoria;
-    }
-    public Condicao getCondicao() {
-        return condicao;
-    }
-
-    public void setNome(String nome) {
-        if (nome == null || nome.trim().isEmpty()) {
-            throw new IllegalArgumentException("O nome do produto é obrigatório.");
-        }
-        this.nome = nome;
-    }
-
-    public void setPreco(BigDecimal preco) {
-        if (preco == null || preco.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("O preço deve ser positivo.");
-        }
-        this.preco = preco;
-    }
-
-    public void setCategoria(Categoria categoria) {
-        if (categoria == null) {
-            throw new IllegalArgumentException("A categoria é obrigatória.");
-        }
-        this.categoria = categoria;
-    }
-
-    public void setCondicao(Condicao condicao) {
-        if (condicao == null) {
-            throw new IllegalArgumentException("A condição é obrigatória.");
-        }
-        this.condicao = condicao;
+        if(estoque != null) estoque.setProduto(this);
     }
 }

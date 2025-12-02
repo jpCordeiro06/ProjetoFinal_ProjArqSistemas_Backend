@@ -41,8 +41,9 @@ VALUES (1, 'Maria Compradora', '111.222.333-44', 'maria@gmail.com');
 INSERT INTO clientes (id, nome, cpf, email)
 VALUES (2, 'Ronnison Reges', '111.222.333-44', 'ronnison@gmail.com');
 
+
 -- ============================================================
--- 3. PRODUTOS E ESTOQUE (AQUI MUDOU TUDO!)
+-- 3. PRODUTOS E ESTOQUE
 -- ============================================================
 
 -- Produto 1: Jogo God of War (Sem quantidade aqui!)
@@ -83,3 +84,4 @@ VALUES ('PROMO50', 50.00, '2030-12-31', true);
 
 ALTER TABLE produtos ALTER COLUMN id RESTART WITH 4;
 ALTER TABLE estoques ALTER COLUMN id RESTART WITH 4;
+ALTER TABLE clientes ALTER COLUMN id RESTART WITH 3;
