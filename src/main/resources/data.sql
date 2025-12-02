@@ -77,3 +77,6 @@ VALUES ('BEMVINDO10', 10.00, '2030-12-31', true);
 
 INSERT INTO cupons_desconto (codigo, percentual, validade, ativo)
 VALUES ('PROMO50', 50.00, '2030-12-31', true);
+
+ALTER TABLE produtos ALTER COLUMN id RESTART WITH 4;
+ALTER TABLE estoques ALTER COLUMN id RESTART WITH 4;

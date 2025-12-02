@@ -4,6 +4,7 @@ import com.levelupstore.estoque.model.*;
 import com.levelupstore.estoque.repository.ProdutoRepository;
 import com.levelupstore.estoque.service.EstoqueService;
 import com.levelupstore.pagamentos.*;
+import com.levelupstore.pdv.model.CupomDesconto;
 import com.levelupstore.pdv.model.ItemVenda;
 import com.levelupstore.pdv.model.StatusVenda;
 import com.levelupstore.pdv.model.Venda;
@@ -123,17 +124,16 @@ public class LevelUpMenu implements CommandLineRunner {
             System.out.println("\n--- NOVA VENDA ---");
 
             Usuario vendedor = usuarioRepository.findById(idVendedor).orElseThrow();
-            Cliente cliente = clienteRepository.findById(1L).orElseThrow(); // Cliente fixo para teste
+            Cliente cliente = clienteRepository.findById(1L).orElseThrow();
 
             Venda venda = new Venda();
             venda.setVendedor(vendedor);
             venda.setCliente(cliente);
 
-            // Define status inicial como FINALIZADA (ID 2)
             StatusVenda status = statusVendaRepository.findById(2L).orElse(null);
             venda.setStatusVenda(status);
 
-            // Adicionar itens ao carrinho
+            // PASSO 1: CARRINHO
             while (true) {
                 System.out.print("ID do Produto (0 para finalizar): ");
                 Long idProd = scanner.nextLong();
@@ -156,21 +156,41 @@ public class LevelUpMenu implements CommandLineRunner {
                 return;
             }
 
-            // Checkout
+            // PASSO 2: CUPOM DE DESCONTO (NOVO!)
+            System.out.print("Possui cupom de desconto? (S/N): ");
+            String temCupom = scanner.next();
+
+            if (temCupom.equalsIgnoreCase("S")) {
+                System.out.print("Digite o código do cupom: ");
+                String codigo = scanner.next();
+
+                // Cria um objeto cupom apenas com o código para o Service validar depois
+                CupomDesconto cupom = new CupomDesconto();
+                cupom.setCodigo(codigo);
+                venda.setCupomDesconto(cupom);
+            }
+
+            // PASSO 3: CHECKOUT
             venda.calcularTotal();
-            System.out.println("Total: R$ " + venda.getValorTotal());
+            // O total exibido aqui é o BRUTO. O líquido (com desconto) será calculado no Service.
+            System.out.println("Total Bruto: R$ " + venda.getValorTotal());
 
             TipoPagamento pagamento = selecionarFormaPagamento(scanner);
             venda.setTipoPagamento(pagamento);
 
-            // Processar no Service
+            // Processar
             Venda concluida = vendaService.realizarVenda(venda);
 
-            System.out.println("VENDA CONCLUÍDA! ID: " + concluida.getId());
-            System.out.println("Valor Final: R$ " + concluida.getValorTotal());
+            System.out.println("--------------------------------");
+            System.out.println("✅ VENDA CONCLUÍDA! ID: " + concluida.getId());
+            if (concluida.getCupomDesconto() != null) {
+                System.out.println("🏷️ Cupom Aplicado: " + concluida.getCupomDesconto().getCodigo());
+            }
+            System.out.println("💰 Valor Final a Pagar: R$ " + concluida.getValorTotal());
+            System.out.println("--------------------------------");
 
         } catch (Exception e) {
-            System.out.println("Erro na venda: " + e.getMessage());
+            System.out.println("❌ Erro na venda: " + e.getMessage());
         }
     }
 
