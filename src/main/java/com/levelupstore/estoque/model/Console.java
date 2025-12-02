@@ -9,8 +9,8 @@ import jakarta.persistence.Table;
 @PrimaryKeyJoinColumn(name = "produto_id")
 public class Console extends Produto {
 
-    private String marca;  // Ex: Sony, Nintendo
-    private String modelo; // Ex: PS5 Pro, Switch OLED
+    private String marca;
+    private String modelo;
 
     public Console() {
         super();

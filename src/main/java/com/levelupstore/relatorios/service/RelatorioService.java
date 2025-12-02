@@ -31,7 +31,6 @@ public class RelatorioService {
         BigDecimal maiorPreco = BigDecimal.ZERO;
 
         for (Produto p : produtos) {
-            // MUDANÇA AQUI: Verifica se o produto tem o objeto Estoque associado
             if (p.getEstoque() != null && p.getEstoque().getQuantidade() != null) {
 
                 // Acessa a quantidade através do objeto Estoque

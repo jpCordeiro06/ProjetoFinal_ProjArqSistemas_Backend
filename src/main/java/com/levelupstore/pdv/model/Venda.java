@@ -25,7 +25,6 @@ public class Venda {
 
     private BigDecimal valorTotal = BigDecimal.ZERO;
 
-    // --- NOVOS CAMPOS (Estrutura do Colega) ---
 
     @OneToOne
     @JoinColumn(name = "status_id")
@@ -35,7 +34,6 @@ public class Venda {
     @JoinColumn(name = "cupom_id")
     private CupomDesconto cupomDesconto;
 
-    // --- CAMPOS ESSENCIAIS (Nossa Estrutura) ---
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "tipo_pagamento_id") // Nome da coluna no banco
@@ -52,33 +50,33 @@ public class Venda {
     @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemVenda> itens = new ArrayList<>();
 
-    // -------------------------------------------
-    // CONSTRUTORES
-    // -------------------------------------------
-
     public Venda() {
         // Data definida automaticamente pelo @CreationTimestamp ou aqui se preferir
-        // this.dataHora = LocalDateTime.now();
+        this.dataHora = LocalDateTime.now();
     }
-
-    // -------------------------------------------
-    // MÉTODOS AUXILIARES
-    // -------------------------------------------
 
     public void adicionarItem(ItemVenda item) {
         item.setVenda(this);
         this.itens.add(item);
-        // O cálculo do total geralmente é feito no Service para considerar cupons,
-        // mas podemos ter um método simples aqui também.
     }
 
     public void setValorTotal(BigDecimal valorTotal) {
         this.valorTotal = valorTotal;
     }
 
-    // -------------------------------------------
-    // GETTERS E SETTERS
-    // -------------------------------------------
+    // Método auxiliar para calcular o total com base nos itens
+    public void calcularTotal() {
+        this.valorTotal = BigDecimal.ZERO;
+        if (this.itens != null) {
+            for (ItemVenda item : this.itens) {
+                // Validação de segurança para evitar erro se o preço for nulo
+                if (item.getPrecoUnitario() != null) {
+                    BigDecimal subtotal = item.getPrecoUnitario().multiply(new BigDecimal(item.getQuantidade()));
+                    this.valorTotal = this.valorTotal.add(subtotal);
+                }
+            }
+        }
+    }
 
     public Long getId() {
         return id;

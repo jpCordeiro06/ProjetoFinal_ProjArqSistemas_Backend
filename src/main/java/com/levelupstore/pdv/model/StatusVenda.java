@@ -12,9 +12,17 @@ public class StatusVenda {
     private String descricao; // Ex: AGUARDANDO_PAGAMENTO, FINALIZADA
 
     public StatusVenda() {}
-    public StatusVenda(String descricao) { this.descricao = descricao; }
+    public StatusVenda(String descricao) {
+        this.descricao = descricao;
+    }
 
-    public Long getId() { return id; }
-    public String getDescricao() { return descricao; }
-    public void setDescricao(String descricao) { this.descricao = descricao; }
+    public Long getId() {
+        return id;
+    }
+    public String getDescricao() {
+        return descricao;
+    }
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
 }

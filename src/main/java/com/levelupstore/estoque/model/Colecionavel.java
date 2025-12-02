@@ -9,8 +9,8 @@ import jakarta.persistence.Table;
 @PrimaryKeyJoinColumn(name = "produto_id")
 public class Colecionavel extends Produto {
 
-    private String linha;       // Ex: Marvel Legends, Funko Pop
-    private String fabricante;  // Ex: Hasbro, Funko, Iron Studios
+    private String linha;
+    private String fabricante;
 
     public Colecionavel() {
         super();

@@ -29,14 +29,35 @@ public class MovimentacaoEstoque {
     public MovimentacaoEstoque() {}
 
     // Getters e Setters
-    public Long getId() { return id; }
-    public LocalDateTime getDataHora() { return dataHora; }
-    public int getQuantidade() { return quantidade; }
-    public void setQuantidade(int quantidade) { this.quantidade = quantidade; }
-    public String getObservacao() { return observacao; }
-    public void setObservacao(String observacao) { this.observacao = observacao; }
-    public Estoque getEstoque() { return estoque; }
-    public void setEstoque(Estoque estoque) { this.estoque = estoque; }
-    public TipoMovimentacaoEstoque getTipo() { return tipo; }
-    public void setTipo(TipoMovimentacaoEstoque tipo) { this.tipo = tipo; }
+    public Long getId() {
+        return id;
+    }
+    public LocalDateTime getDataHora() {
+        return dataHora;
+    }
+
+    public int getQuantidade() {
+        return quantidade;
+    }
+    public void setQuantidade(int quantidade) {
+        this.quantidade = quantidade;
+    }
+    public String getObservacao() {
+        return observacao;
+    }
+    public void setObservacao(String observacao) {
+        this.observacao = observacao;
+    }
+    public Estoque getEstoque() {
+        return estoque;
+    }
+    public void setEstoque(Estoque estoque) {
+        this.estoque = estoque;
+    }
+    public TipoMovimentacaoEstoque getTipo() {
+        return tipo;
+    }
+    public void setTipo(TipoMovimentacaoEstoque tipo) {
+        this.tipo = tipo;
+    }
 }

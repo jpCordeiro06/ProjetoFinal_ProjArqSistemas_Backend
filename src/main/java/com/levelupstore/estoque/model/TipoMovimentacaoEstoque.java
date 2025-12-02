@@ -12,9 +12,17 @@ public class TipoMovimentacaoEstoque {
     private String descricao; // Ex: ENTRADA, VENDA, AJUSTE, PERDA
 
     public TipoMovimentacaoEstoque() {}
-    public TipoMovimentacaoEstoque(String descricao) { this.descricao = descricao; }
+    public TipoMovimentacaoEstoque(String descricao) {
+        this.descricao = descricao;
+    }
 
-    public Long getId() { return id; }
-    public String getDescricao() { return descricao; }
-    public void setDescricao(String descricao) { this.descricao = descricao; }
+    public Long getId() {
+        return id;
+    }
+    public String getDescricao() {
+        return descricao;
+    }
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
 }

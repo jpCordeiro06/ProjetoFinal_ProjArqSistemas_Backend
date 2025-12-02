@@ -17,15 +17,11 @@ public class CupomDesconto {
 
     private LocalDate validade; // Data de expiração
 
-    // --- O CAMPO QUE FALTAVA ---
     @Column(nullable = false)
     private Boolean ativo = true;
 
-    // Construtor Vazio (Obrigatório JPA)
-    public CupomDesconto() {
-    }
+    public CupomDesconto() {}
 
-    // Getters e Setters Manuais
     public String getCodigo() {
         return codigo;
     }
