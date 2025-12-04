@@ -6,6 +6,7 @@ import com.levelupstore.estoque.service.EstoqueService;
 import com.levelupstore.pagamentos.*;
 import com.levelupstore.pdv.model.CupomDesconto;
 import com.levelupstore.pdv.model.ItemVenda;
+import com.levelupstore.pdv.model.StatusVenda;
 import com.levelupstore.pdv.model.Venda;
 import com.levelupstore.pdv.repository.CupomDescontoRepository;
 import com.levelupstore.pdv.repository.StatusVendaRepository;
@@ -151,7 +152,9 @@ public class LevelUpMenu implements CommandLineRunner {
             Venda venda = new Venda();
             venda.setVendedor(vendedor);
             venda.setCliente(cliente);
-            venda.setStatusVenda(statusVendaRepository.findById(2L).orElse(null));
+            StatusVenda status = statusVendaRepository.findByDescricao("FINALIZADA")
+                    .orElseThrow(() -> new RuntimeException("Status 'FINALIZADA' não encontrado no banco."));
+            venda.setStatusVenda(status);
 
             // Carrinho
             listarProdutosReais(); // Mostra produtos
